@@ -1,14 +1,14 @@
 """
 Supplementary code for:
-"A Minimal Transport Model Reconciles Conflicting Reports of Oatp1a4 Zonation
-in Rat Liver" (CPT:PSP Perspective submission)
+"A Minimal Transport Model Reframes, but Does Not Resolve, Conflicting Reports
+of Oatp1a4 Zonation" (CPT:PSP Perspective submission)
 
 A 24-compartment, single-pass sinusoidal transport model of the rat hepatic
 lobule (portal vein -> central vein), used to compare three candidate spatial
 profiles for Oatp1a4 activity against the SR-101 imaging data and kinetic
 parameters reported in Akanuma et al., Drug Metab Pharmacokinet 2019;34:239-246.
 
-No external dependencies (pure Python). Reproduces Figure 1A and 1B.
+No external dependencies (pure Python). Reproduces Figure 1B and 1C (the schematic, Figure 1A, is illustrative only).
 """
 
 N = 24                      # number of well-mixed compartments, PV -> CV
@@ -70,20 +70,20 @@ def simulate(hypothesis, digoxin_uM=0.0, dose_uM=10.0, t_end_min=10.0):
 
 def cv_pv_ratio(Ch, n_edge=3):
     """Mean hepatocyte concentration over the outermost n_edge compartments
-    at each end, expressed as a CV:PV ratio (Figure 1A summary statistic)."""
+    at each end, expressed as a CV:PV ratio (Figure 1B summary statistic)."""
     pv = sum(Ch[:n_edge]) / n_edge
     cv = sum(Ch[-n_edge:]) / n_edge
     return cv / max(pv, 1e-9)
 
 
 if __name__ == "__main__":
-    print("Figure 1A -- baseline (10 uM SR-101, no digoxin, t = 10 min)")
+    print("Figure 1B -- baseline (10 uM SR-101, no digoxin, t = 10 min)")
     for h in ["H1", "H2", "H3"]:
         Cb, Ch = simulate(h, digoxin_uM=0.0, dose_uM=10.0, t_end_min=10.0)
         print(f"  {h}: CV:PV ratio = {cv_pv_ratio(Ch):.2f}")
 
     print()
-    print("Figure 1B -- CV signal (% of no-digoxin baseline) vs. digoxin dose")
+    print("Figure 1C -- CV signal (% of no-digoxin baseline) vs. digoxin dose")
     digoxin_doses = [0, 0.3, 0.6, 1.0, 1.5, 2.0, 2.4, 3.0, 4.0, 5.0]
     for h in ["H1", "H2", "H3"]:
         cv0 = None

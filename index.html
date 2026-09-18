@@ -300,7 +300,7 @@
 
     <div class="panel">
       <h2>Predicted hepatocyte SR&#8209;101 across the lobule
-        <span class="sub">portal vein (PV) &rarr; central vein (CV), at steady state</span>
+        <span class="sub">portal vein (PV) &rarr; central vein (CV), at the selected observation time</span>
       </h2>
 
       <div class="legend" id="legend"></div>
@@ -380,6 +380,7 @@
         <li><b>K<sub>m</sub> = 8.2 µM</b>, the high-affinity constant Akanuma et al. measured in isolated rat hepatocytes; digoxin acts as a competitive inhibitor scaling K<sub>m</sub> upward.</li>
         <li><b>Equal total Oatp1a4 capacity</b> across all three hypotheses &mdash; only its spatial arrangement differs, so the comparison isn't just "more transporter wins."</li>
         <li>This is a <b>hypothesis-testing toy model</b>, not a fitted PBPK model: units are illustrative, not literal reproductions of the paper's absolute pharmacokinetics.</li>
+        <li>Efflux here is <b>reversible</b> (back to blood only, no independent clearance) &mdash; so at truly infinite time every hypothesis relaxes to a flat profile. The non-flat curves you see are the model's prediction at the <b>observation time</b> (matching the imaging protocol), not at mathematical equilibrium; H2 can look periportal-biased at this finite time under high-extraction settings, but never pericentral-biased, at any time or setting.</li>
       </ul>
     </div>
     <div class="panel">
