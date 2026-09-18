@@ -32,6 +32,12 @@ in hand?
   live against a discriminability table.
 - **`model.py`** — a dependency-free Python reimplementation of the identical model
   (pure standard library, no numpy required), used to generate the manuscript's Figure 1.
+- **`sensitivity_analysis.py`** — generates **Supplementary Figure S1**: a 2D sweep of
+  extraction ratio (Vmax/flow) × efflux rate (kef), confirming that H2's max CV:PV ratio
+  over time never exceeds 1.00 anywhere in the grid tested (global max: 0.999999999999978,
+  i.e. numerically 1). Requires `numpy` and `matplotlib` (`pip install numpy matplotlib`).
+  Run with `python3 sensitivity_analysis.py`; output is `figureS1_sensitivity.png`
+  (included in this repo).
 
 ### Reproducing Figure 1
 
@@ -74,8 +80,9 @@ reversible efflux back to blood — so at true infinite-time equilibrium *every*
 relaxes to an exactly flat profile (nothing removes substrate permanently). The numbers
 reported here are the model's prediction at the imaging *observation time* (t = 10 min,
 matching the original protocol), not at equilibrium. Within that constraint, a spatially
-uniform ("non-zonated") transporter can be proven — analytically and by a wide numerical
-sweep — to never exceed CV:PV = 1: it can look flat or periportal-biased at finite time,
+uniform ("non-zonated") transporter can be proven — analytically and by a wide,
+convergence-checked numerical sweep (Supplementary Figure S1) — to never exceed
+CV:PV = 1: it can look flat or periportal-biased at finite time,
 but never pericentral-biased, at any parameter setting. Reproducing Akanuma et al.'s
 actual pericentral result under a genuinely non-zonated Oatp1a4 therefore requires some
 additional, spatially asymmetric process this model omits — most plausibly a
