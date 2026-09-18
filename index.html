@@ -1,0 +1,601 @@
+<title>Lobule Zonation Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: light;
+    --page-bg:#f9f9f7;
+    --surface:#fcfcfb;
+    --ink:#0b0b0b;
+    --ink2:#52514e;
+    --muted:#898781;
+    --line:#e1e0d9;
+    --axis:#c3c2b7;
+    --border:rgba(11,11,11,0.10);
+
+    --h1:#2a78d6;  /* sharp pericentral */
+    --h2:#eb6834;  /* non-zonated */
+    --h3:#1baf7a;  /* continuous gradient */
+
+    --good:#0ca30c;
+    --critical:#d03b3b;
+
+    --cv-marker:#a8503f;
+    --pv-marker:#4c7a52;
+
+    --font-display:'Archivo',system-ui,sans-serif;
+    --font-body:'IBM Plex Sans',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --page-bg:#0d0d0d;
+      --surface:#1a1a19;
+      --ink:#ffffff;
+      --ink2:#c3c2b7;
+      --muted:#898781;
+      --line:#2c2c2a;
+      --axis:#383835;
+      --border:rgba(255,255,255,0.10);
+      --h1:#3987e5;
+      --h2:#d95926;
+      --h3:#199e70;
+      --cv-marker:#d38273;
+      --pv-marker:#7cae83;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --page-bg:#0d0d0d;
+    --surface:#1a1a19;
+    --ink:#ffffff;
+    --ink2:#c3c2b7;
+    --muted:#898781;
+    --line:#2c2c2a;
+    --axis:#383835;
+    --border:rgba(255,255,255,0.10);
+    --h1:#3987e5;
+    --h2:#d95926;
+    --h3:#199e70;
+    --cv-marker:#d38273;
+    --pv-marker:#7cae83;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--page-bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    margin:0;
+    padding-inline:16px;
+    padding-block:28px 40px;
+  }
+  .wrap{ max-width:1040px; margin:0 auto; display:flex; flex-direction:column; gap:22px; }
+
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.09em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  h1{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:clamp(24px,4vw,34px);
+    line-height:1.1;
+    letter-spacing:-0.01em;
+    margin:6px 0 8px;
+    text-wrap:balance;
+    color:var(--ink);
+  }
+  .lede{
+    font-size:15px;
+    line-height:1.55;
+    color:var(--ink2);
+    max-width:64ch;
+    margin:0;
+  }
+  .lede b{ color:var(--ink); font-weight:600; }
+
+  .cite-strip{
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    color:var(--muted);
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px 18px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+  }
+  .cite-strip span b{ color:var(--ink2); font-weight:500; }
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:20px;
+  }
+  .panel h2{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:15px;
+    margin:0 0 14px;
+    color:var(--ink);
+  }
+  .panel h2 .sub{
+    font-family:var(--font-body);
+    font-weight:400;
+    font-size:12.5px;
+    color:var(--muted);
+    display:block;
+    margin-top:2px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap:18px;
+    align-items:start;
+  }
+  @media (max-width:760px){
+    .grid{ grid-template-columns:1fr; }
+  }
+
+  /* legend / hypothesis toggle */
+  .legend{ display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+  .legend-item{
+    display:flex; align-items:flex-start; gap:10px;
+    padding:9px 10px;
+    border-radius:7px;
+    border:1px solid var(--border);
+    cursor:pointer;
+    background:transparent;
+    transition:background .12s ease;
+  }
+  .legend-item:hover{ background:var(--line); }
+  .legend-item input{ margin-top:3px; accent-color:var(--dot,var(--ink)); flex:none; }
+  .legend-dot{
+    width:11px; height:11px; border-radius:50%;
+    margin-top:3px; flex:none;
+  }
+  .legend-text{ display:flex; flex-direction:column; gap:1px; }
+  .legend-text .name{ font-weight:600; font-size:13.5px; color:var(--ink); }
+  .legend-text .src{ font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+  .legend-item.off{ opacity:0.42; }
+
+  /* controls */
+  .controls{ display:flex; flex-direction:column; gap:16px; }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field-label{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-size:12.5px; color:var(--ink2); font-weight:500;
+  }
+  .field-label .val{
+    font-family:var(--font-mono); font-weight:500; color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  input[type=range]{
+    width:100%; accent-color:var(--ink);
+    height:4px;
+  }
+  .presets{ display:flex; gap:8px; flex-wrap:wrap; }
+  .preset-btn{
+    font-family:var(--font-mono);
+    font-size:11px;
+    padding:5px 9px;
+    border-radius:5px;
+    border:1px solid var(--border);
+    background:transparent;
+    color:var(--ink2);
+    cursor:pointer;
+  }
+  .preset-btn:hover{ background:var(--line); color:var(--ink); }
+
+  .note-card{
+    font-size:12.5px;
+    line-height:1.5;
+    color:var(--ink2);
+    background:var(--page-bg);
+    border:1px dashed var(--border);
+    border-radius:7px;
+    padding:10px 12px;
+  }
+  .note-card b{ color:var(--ink); }
+
+  /* chart */
+  .chart-wrap{ position:relative; }
+  svg{ width:100%; height:auto; display:block; overflow:visible; }
+  .axis-label{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    fill:var(--muted);
+  }
+  .gridline{ stroke:var(--line); stroke-width:1; }
+  .baseline{ stroke:var(--axis); stroke-width:1; }
+  .series-line{ fill:none; stroke-width:2.4; stroke-linecap:round; }
+  .series-dot{ r:3.4; }
+  .end-label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    font-weight:500;
+  }
+
+  .lobule-strip{
+    display:flex; align-items:center; gap:10px;
+    margin-top:4px; padding-top:12px;
+    border-top:1px solid var(--line);
+    font-family:var(--font-mono); font-size:10.5px; color:var(--muted);
+  }
+  .lobule-strip .marker{ display:flex; align-items:center; gap:5px; }
+  .lobule-strip .dot{ width:8px; height:8px; border-radius:50%; }
+  .lobule-strip .flow{ flex:1; height:1px; background:
+    repeating-linear-gradient(to right, var(--axis) 0 5px, transparent 5px 9px); }
+
+  .tooltip{
+    position:absolute; pointer-events:none;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:7px; padding:8px 10px;
+    font-family:var(--font-mono); font-size:11px; color:var(--ink);
+    box-shadow:0 6px 18px rgba(0,0,0,0.16);
+    white-space:nowrap; z-index:5;
+    opacity:0; transition:opacity .08s ease;
+  }
+  .tooltip .t-title{ color:var(--muted); margin-bottom:4px; }
+  .tooltip .t-row{ display:flex; gap:8px; align-items:center; }
+  .tooltip .t-dot{ width:7px; height:7px; border-radius:50%; }
+
+  /* discriminability table */
+  table.disc{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.disc th{
+    text-align:left; font-family:var(--font-mono); font-weight:500;
+    font-size:10.5px; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--muted); padding:0 6px 8px; border-bottom:1px solid var(--line);
+  }
+  table.disc td{
+    padding:9px 6px; border-bottom:1px solid var(--line); vertical-align:top;
+  }
+  table.disc tr:last-child td{ border-bottom:none; }
+  .hyp-name{ display:flex; align-items:center; gap:7px; font-weight:600; color:var(--ink); }
+  .hyp-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .ratio{ font-family:var(--font-mono); font-variant-numeric:tabular-nums; color:var(--ink); }
+  .verdict{ display:flex; align-items:center; gap:6px; font-size:12px; }
+  .verdict .mark{ width:14px; height:14px; border-radius:50%; flex:none;
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:700; color:#fff; }
+  .verdict.good .mark{ background:var(--good); }
+  .verdict.bad .mark{ background:var(--critical); }
+
+  .aside-list{ margin:0; padding-left:18px; font-size:12.5px; line-height:1.6; color:var(--ink2); }
+  .aside-list li{ margin-bottom:6px; }
+  .aside-list b{ color:var(--ink); font-weight:600; }
+  .mono-inline{ font-family:var(--font-mono); font-size:11.5px; color:var(--ink); }
+
+  footer{
+    font-size:11.5px; color:var(--muted); line-height:1.6;
+    padding-top:14px; border-top:1px solid var(--line);
+  }
+</style>
+
+<div class="wrap">
+
+  <div>
+    <div class="eyebrow">In silico · hepatic lobule transport</div>
+    <h1>Which Oatp1a4 zonation pattern actually fits the data?</h1>
+    <p class="lede">
+      Two papers disagree: <b>Akanuma et al. (2019)</b> report Oatp1a4 sharply enriched around the
+      central vein by IHC and functional SR&#8209;101 imaging; <b>van de Graaf et al. (2024)</b> report Oatp1a4
+      does <i>not</i> follow a zonated pattern at all. Same transport model, three candidate spatial
+      profiles for Oatp1a4 &mdash; move the sliders and see which one the imaging data can actually distinguish.
+    </p>
+    <div class="cite-strip">
+      <span><b>Akanuma S, et al.</b> Drug Metab Pharmacokinet 34:239&ndash;246 (2019)</span>
+      <span><b>van de Graaf SFJ, et al.</b> Acta Physiol (2024), doi:10.1111/apha.14239</span>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <div class="panel">
+      <h2>Predicted hepatocyte SR&#8209;101 across the lobule
+        <span class="sub">portal vein (PV) &rarr; central vein (CV), at steady state</span>
+      </h2>
+
+      <div class="legend" id="legend"></div>
+
+      <div class="chart-wrap">
+        <svg id="chart" viewBox="0 0 640 340" role="img" aria-label="Hepatocyte SR-101 concentration across the lobule for three zonation hypotheses"></svg>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+
+      <div class="lobule-strip">
+        <span class="marker"><span class="dot" style="background:var(--pv-marker)"></span>PV &middot; GAT2⁺</span>
+        <span class="flow"></span>
+        <span class="marker">Oatp1a4⁺ &middot; CV<span class="dot" style="background:var(--cv-marker)"></span></span>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:18px;">
+
+      <div class="panel">
+        <h2>Experiment controls</h2>
+        <div class="controls">
+
+          <div class="field">
+            <div class="field-label"><span>SR&#8209;101 dose (portal inflow)</span><span class="val" id="v-c0">10 µM</span></div>
+            <input type="range" id="c0" min="1" max="50" step="1" value="10">
+          </div>
+
+          <div class="field">
+            <div class="field-label"><span>Digoxin (competitive inhibitor)</span><span class="val" id="v-dig">0 µM</span></div>
+            <input type="range" id="dig" min="0" max="5" step="0.1" value="0">
+            <div class="presets">
+              <button class="preset-btn" id="preset-none" type="button">No inhibitor</button>
+              <button class="preset-btn" id="preset-dig" type="button">Match paper &middot; 2.4 µM</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label"><span>Time after SR&#8209;101 infusion</span><span class="val" id="v-t">10 min</span></div>
+            <input type="range" id="tmin" min="1" max="20" step="0.5" value="10">
+          </div>
+
+          <div class="note-card">
+            <b>PAH (organic anion, non&#8209;Oatp substrate):</b> included in the original experiment
+            as a negative control. Every hypothesis here predicts it has <b>zero effect</b> on SR&#8209;101
+            uptake &mdash; matching what was observed. Not modeled as a variable for that reason.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Does the prediction survive contact with the actual imaging?
+      <span class="sub">CV:PV ratio at current settings, checked against both papers' claims</span>
+    </h2>
+    <div style="overflow-x:auto;">
+      <table class="disc">
+        <thead>
+          <tr>
+            <th>Hypothesis</th>
+            <th>CV : PV ratio</th>
+            <th>vs. Akanuma imaging<br>(CV≫PV, killed by digoxin)</th>
+            <th>vs. van de Graaf claim<br>(no zonation)</th>
+          </tr>
+        </thead>
+        <tbody id="disc-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>What the model assumes</h2>
+      <ul class="aside-list">
+        <li><b>Single-pass sinusoid</b>: 24 well-mixed compartments in series, blood flowing portal&rarr;central; each compartment exchanges with a hepatocyte pool by saturable influx (<span class="mono-inline">V<sub>max</sub>(x)·C/(K<sub>m</sub>+C)</span>) plus first-order efflux back to blood.</li>
+        <li><b>K<sub>m</sub> = 8.2 µM</b>, the high-affinity constant Akanuma et al. measured in isolated rat hepatocytes; digoxin acts as a competitive inhibitor scaling K<sub>m</sub> upward.</li>
+        <li><b>Equal total Oatp1a4 capacity</b> across all three hypotheses &mdash; only its spatial arrangement differs, so the comparison isn't just "more transporter wins."</li>
+        <li>This is a <b>hypothesis-testing toy model</b>, not a fitted PBPK model: units are illustrative, not literal reproductions of the paper's absolute pharmacokinetics.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>What would actually settle it</h2>
+      <ul class="aside-list">
+        <li>Sharp (H1) and continuous (H3) both predict CV&nbsp;&gt;&nbsp;PV &mdash; a same/different verdict from a single image can't tell them apart.</li>
+        <li>The model shows a genuine trap for H2: because blood is progressively depleted flowing PV&rarr;CV, a truly <i>non-zonated</i> transporter is expected to look flat-to-portal-biased, not pericentral-biased &mdash; which is the opposite of what Akanuma's own images show.</li>
+        <li>The discriminating measurement is the <b>steepness of the PV&rarr;CV line-scan</b>, not just "is CV brighter" &mdash; quantify that from cryosection fluorescence (or spatial proteomics / spatial transcriptomics) at several digoxin doses, and fit it against these curves.</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    Simulation built to explore the Akanuma (2019) vs. van de Graaf (2024) disagreement over Oatp1a4 zonation, using kinetic parameters reported in Akanuma et al., <i>Drug Metab Pharmacokinet</i> 34:239&ndash;246. Illustrative model for hypothesis generation &mdash; not a substitute for quantitative line-scan analysis of real tissue.
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var N = 24;
+  var xs = [];
+  for (var i=0;i<N;i++) xs.push((i+0.5)/N);
+
+  var KM = 8.2, KI = 0.3, F = 8.0, VB = 0.15, VH = 0.6, KEF = 0.8, VMAX0 = 10.0, DT = 0.0025;
+
+  var HYP = [
+    { id:'h1', key:'H1', name:'Sharp pericentral', src:'Akanuma 2019 (IHC)', color:'var(--h1)',
+      raw: xs.map(function(x){ return 0.04 + 0.96*Math.pow(x,3); }) },
+    { id:'h2', key:'H2', name:'Non-zonated', src:'van de Graaf 2024', color:'var(--h2)',
+      raw: xs.map(function(){ return 1.0; }) },
+    { id:'h3', key:'H3', name:'Continuous gradient', src:'synthesis / 2026 review', color:'var(--h3)',
+      raw: xs.map(function(x){ return 0.2 + 0.8*x; }) }
+  ];
+  HYP.forEach(function(h){
+    var mean = h.raw.reduce(function(a,b){return a+b;},0)/N;
+    h.vmax = h.raw.map(function(r){ return r/mean*VMAX0; });
+  });
+
+  function resolveColor(varExpr){
+    var tmp = document.createElement('span');
+    tmp.style.color = varExpr;
+    document.body.appendChild(tmp);
+    var c = getComputedStyle(tmp).color;
+    document.body.removeChild(tmp);
+    return c;
+  }
+
+  function simulate(vmaxArr, dig, C0, tEnd){
+    var KmApp = dig > 0 ? KM*(1+dig/KI) : KM;
+    var Cb = new Array(N).fill(0), Ch = new Array(N).fill(0);
+    var nsteps = Math.max(1, Math.round(tEnd/DT));
+    for (var s=0; s<nsteps; s++){
+      var newCb = new Array(N), newCh = new Array(N);
+      var prevIn = C0;
+      for (var j=0;j<N;j++){
+        var jin = vmaxArr[j]*Cb[j]/(KmApp+Cb[j]);
+        var jout = KEF*Ch[j];
+        var dCb = F/VB*(prevIn - Cb[j]) - (jin-jout)/VB;
+        var dCh = (jin-jout)/VH;
+        var nc = Cb[j] + DT*dCb;
+        var nh = Ch[j] + DT*dCh;
+        newCb[j] = nc>0?nc:0;
+        newCh[j] = nh>0?nh:0;
+        prevIn = Cb[j];
+      }
+      Cb = newCb; Ch = newCh;
+    }
+    return { Cb: Cb, Ch: Ch };
+  }
+
+  var els = {
+    c0: document.getElementById('c0'), vC0: document.getElementById('v-c0'),
+    dig: document.getElementById('dig'), vDig: document.getElementById('v-dig'),
+    tmin: document.getElementById('tmin'), vT: document.getElementById('v-t'),
+    legend: document.getElementById('legend'),
+    discBody: document.getElementById('disc-body'),
+    svg: document.getElementById('chart'),
+    tooltip: document.getElementById('tooltip')
+  };
+
+  var visible = { h1:true, h2:true, h3:true };
+
+  // build legend
+  HYP.forEach(function(h){
+    var item = document.createElement('label');
+    item.className = 'legend-item';
+    item.id = 'legend-'+h.id;
+    item.innerHTML =
+      '<input type="checkbox" checked data-id="'+h.id+'">' +
+      '<span class="legend-dot" style="background:'+h.color+'"></span>' +
+      '<span class="legend-text"><span class="name">'+h.key+' &middot; '+h.name+'</span>' +
+      '<span class="src">'+h.src+'</span></span>';
+    els.legend.appendChild(item);
+    item.querySelector('input').addEventListener('change', function(e){
+      visible[h.id] = e.target.checked;
+      item.classList.toggle('off', !e.target.checked);
+      render();
+    });
+  });
+
+  els.c0.addEventListener('input', render);
+  els.dig.addEventListener('input', render);
+  els.tmin.addEventListener('input', render);
+  document.getElementById('preset-none').addEventListener('click', function(){ els.dig.value = 0; render(); });
+  document.getElementById('preset-dig').addEventListener('click', function(){ els.dig.value = 2.4; render(); });
+
+  // chart geometry
+  var W = 640, H = 340, ML = 54, MR = 20, MT = 14, MB = 40;
+  var plotW = W-ML-MR, plotH = H-MT-MB;
+
+  function render(){
+    var C0 = parseFloat(els.c0.value);
+    var dig = parseFloat(els.dig.value);
+    var t = parseFloat(els.tmin.value);
+    els.vC0.textContent = C0.toFixed(0)+' µM';
+    els.vDig.textContent = dig.toFixed(1)+' µM';
+    els.vT.textContent = t.toFixed(1)+' min';
+
+    var results = {};
+    var maxY = 1;
+    HYP.forEach(function(h){
+      var r = simulate(h.vmax, dig, C0, t);
+      results[h.id] = r;
+      var mx = Math.max.apply(null, r.Ch);
+      if (mx > maxY) maxY = mx;
+    });
+    maxY = Math.ceil(maxY*1.12/5)*5 || 5;
+
+    function px(xi){ return ML + xi*plotW; }
+    function py(v){ return MT + plotH - (v/maxY)*plotH; }
+
+    var svgParts = [];
+
+    // gridlines + y ticks
+    var ticks = 5;
+    for (var g=0; g<=ticks; g++){
+      var val = maxY*g/ticks;
+      var y = py(val);
+      svgParts.push('<line class="gridline" x1="'+ML+'" x2="'+(W-MR)+'" y1="'+y+'" y2="'+y+'"/>');
+      svgParts.push('<text class="axis-label" x="'+(ML-8)+'" y="'+(y+3)+'" text-anchor="end">'+val.toFixed(0)+'</text>');
+    }
+    // baseline
+    svgParts.push('<line class="baseline" x1="'+ML+'" x2="'+(W-MR)+'" y1="'+(H-MB)+'" y2="'+(H-MB)+'"/>');
+    // x labels
+    svgParts.push('<text class="axis-label" x="'+ML+'" y="'+(H-MB+22)+'" text-anchor="start">Portal vein (PV)</text>');
+    svgParts.push('<text class="axis-label" x="'+(W-MR)+'" y="'+(H-MB+22)+'" text-anchor="end">Central vein (CV)</text>');
+    svgParts.push('<text class="axis-label" x="'+(ML-40)+'" y="'+(MT+2)+'" transform="rotate(-90 '+(ML-40)+' '+(MT+plotH/2)+')" text-anchor="middle" style="display:none"></text>');
+    svgParts.push('<text class="axis-label" x="'+(14)+'" y="'+(MT+plotH/2)+'" text-anchor="middle" transform="rotate(-90 14 '+(MT+plotH/2)+')">hepatocyte SR-101 (µM)</text>');
+
+    HYP.forEach(function(h){
+      if (!visible[h.id]) return;
+      var Ch = results[h.id].Ch;
+      var pts = xs.map(function(x,idx){ return px(x)+','+py(Ch[idx]); }).join(' ');
+      svgParts.push('<polyline class="series-line" points="'+pts+'" stroke="'+h.color+'"/>');
+      var lastX = px(xs[N-1]), lastY = py(Ch[N-1]);
+      svgParts.push('<circle class="series-dot" cx="'+lastX+'" cy="'+lastY+'" fill="'+h.color+'"/>');
+      var labelY = Math.max(MT+10, Math.min(H-MB-6, lastY-8));
+      svgParts.push('<text class="end-label" x="'+(lastX-6)+'" y="'+labelY+'" text-anchor="end" fill="'+h.color+'">'+h.key+'</text>');
+    });
+
+    // hover targets (invisible rects per compartment column)
+    svgParts.push('<rect id="hover-capture" x="'+ML+'" y="'+MT+'" width="'+plotW+'" height="'+plotH+'" fill="transparent"/>');
+
+    els.svg.innerHTML = svgParts.join('');
+
+    // wire hover
+    var capture = document.getElementById('hover-capture');
+    capture.addEventListener('mousemove', function(evt){
+      var rect = els.svg.getBoundingClientRect();
+      var scaleX = W/rect.width;
+      var mx = (evt.clientX-rect.left)*scaleX;
+      var xi = Math.min(N-1, Math.max(0, Math.round(((mx-ML)/plotW)*(N-1))));
+      showTooltip(evt, xi, results);
+    });
+    capture.addEventListener('mouseleave', function(){ els.tooltip.style.opacity = 0; });
+
+    // discriminability table
+    var rows = [];
+    HYP.forEach(function(h){
+      var Ch = results[h.id].Ch;
+      var pv = (Ch[0]+Ch[1]+Ch[2])/3;
+      var cv = (Ch[N-1]+Ch[N-2]+Ch[N-3])/3;
+      var ratio = cv/Math.max(pv,1e-9);
+      var akanumaOK = ratio > 1.5;
+      var vdgOK = ratio < 1.3;
+      rows.push(
+        '<tr><td><span class="hyp-name"><span class="hyp-dot" style="background:'+h.color+'"></span>'+h.key+' &middot; '+h.name+'</span></td>'+
+        '<td class="ratio">'+(ratio>=100? ratio.toFixed(0) : ratio.toFixed(2))+'&times;</td>'+
+        '<td><span class="verdict '+(akanumaOK?'good':'bad')+'"><span class="mark">'+(akanumaOK?'&#10003;':'&#10005;')+'</span>'+(akanumaOK?'consistent':'contradicts')+'</span></td>'+
+        '<td><span class="verdict '+(vdgOK?'good':'bad')+'"><span class="mark">'+(vdgOK?'&#10003;':'&#10005;')+'</span>'+(vdgOK?'consistent':'contradicts')+'</span></td>'+
+        '</tr>'
+      );
+    });
+    els.discBody.innerHTML = rows.join('');
+  }
+
+  function showTooltip(evt, xi, results){
+    var rows = HYP.filter(function(h){ return visible[h.id]; }).map(function(h){
+      var v = results[h.id].Ch[xi];
+      return '<div class="t-row"><span class="t-dot" style="background:'+h.color+'"></span>'+h.key+': '+v.toFixed(2)+' µM</div>';
+    }).join('');
+    if (!rows) { els.tooltip.style.opacity = 0; return; }
+    var posPct = Math.round(xs[xi]*100);
+    els.tooltip.innerHTML = '<div class="t-title">lobule position '+posPct+'% PV&rarr;CV</div>'+rows;
+    var wrapRect = els.svg.parentElement.getBoundingClientRect();
+    var svgRect = els.svg.getBoundingClientRect();
+    var scaleX = W/svgRect.width;
+    var xPix = (ML + xs[xi]*plotW)/scaleX;
+    els.tooltip.style.left = Math.min(xPix+14, wrapRect.width-160)+'px';
+    els.tooltip.style.top = '10px';
+    els.tooltip.style.opacity = 1;
+  }
+
+  render();
+})();
+</script>
