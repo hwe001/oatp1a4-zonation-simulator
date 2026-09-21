@@ -9,6 +9,10 @@ uptake transporter Oatp1a4.
 > Oatp1a4 Zonation* — submitted to *CPT: Pharmacometrics & Systems Pharmacology*
 > (referenced there under Data and Code Availability).
 
+A follow-up model extending this one with independently zonated CYP metabolism is at
+[transporter-cyp-zonation-simulator](https://github.com/hwe001/transporter-cyp-zonation-simulator)
+(companion code for a submission to *Biopharmaceutics & Drug Disposition*).
+
 ## Why this exists
 
 Two published studies disagree about whether Oatp1a4 is zonated in rat liver:
