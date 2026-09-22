@@ -52,7 +52,7 @@ for i, kef in enumerate(kef_vals):
         print(f"[{time.time()-t0:6.1f}s] vmax0={vmax0:6.1f} (Vmax/F={vmax0/F_fixed:6.2f})  kef={kef:5.2f}  max CV:PV={r:.4f}", flush=True)
 
 print("\nGlobal max CV:PV across entire grid:", grid.max())
-np.save("/tmp/claude-0/-home-user-soxs-signal-app/e0e8cf7e-40ac-56d9-8a75-92897b29550d/scratchpad/grid.npy", grid)
+np.save(__file__.replace("sensitivity_analysis.py", "grid.npy"), grid)
 
 fig, ax = plt.subplots(figsize=(5.4, 4.4))
 im = ax.imshow(grid, origin="lower", cmap="Blues", vmin=0, vmax=1.0, aspect="auto")
@@ -70,5 +70,5 @@ for i in range(len(kef_vals)):
 cbar = fig.colorbar(im, ax=ax, shrink=0.85)
 cbar.set_label("max CV:PV ratio over time")
 fig.tight_layout()
-fig.savefig("/tmp/claude-0/-home-user-soxs-signal-app/e0e8cf7e-40ac-56d9-8a75-92897b29550d/scratchpad/figureS1_sensitivity.png", dpi=300)
+fig.savefig(__file__.replace("sensitivity_analysis.py", "figureS1_sensitivity.png"), dpi=300)
 print("saved heatmap")
